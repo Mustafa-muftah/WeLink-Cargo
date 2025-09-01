@@ -1,5 +1,5 @@
 // API Configuration and utilities for TanStack Query
-import { STORAGE_KEYS } from '@/utils/constants'
+import { STORAGE_KEYS } from '../utlis/constants'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
 
