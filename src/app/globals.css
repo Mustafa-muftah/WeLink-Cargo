@@ -55,9 +55,20 @@
 @media print {
   .print-ticket {
     @apply text-black bg-white;
+    font-size: 12px !important;
   }
   
   .no-print {
     display: none !important;
+  }
+
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 }
