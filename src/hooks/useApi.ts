@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiRequest, ApiError } from '../services/api'
-import { useToast } from '../store'
+import { apiRequest, ApiError } from '@/services/api'
+import { useToast } from '@/store'
 import {
   AuthResponse,
   LoginRequest,
@@ -12,7 +12,9 @@ import {
   CheckinResponse,
   CheckoutRequest,
   CheckoutResponse,
-} from '../types/api'
+  User,
+  ParkingStateReport,
+} from '@/types/api'
 
 // Query keys
 export const QUERY_KEYS = {
@@ -20,6 +22,8 @@ export const QUERY_KEYS = {
   zones: (gateId?: string) => gateId ? ['zones', gateId] : ['zones'],
   categories: ['categories'],
   subscription: (id: string) => ['subscription', id],
+  adminUsers: ['admin', 'users'],
+  adminReports: ['admin', 'reports'],
 } as const
 
 // ==================== AUTHENTICATION ====================
@@ -138,5 +142,46 @@ export function useCheckout() {
     onError: (error: ApiError) => {
       toast.error('Check-out failed', error.message)
     },
+  })
+}
+
+// ==================== ADMIN - USERS ====================
+
+export function useAdminUsers() {
+  return useQuery({
+    queryKey: QUERY_KEYS.adminUsers,
+    queryFn: (): Promise<User[]> => apiRequest('/admin/users'),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  })
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (user: Omit<User, 'id'> & { password: string }): Promise<User> =>
+      apiRequest('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(user),
+      }),
+    onSuccess: () => {
+      toast.success('User created successfully!')
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminUsers })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to create user', error.message)
+    },
+  })
+}
+
+// ==================== ADMIN - REPORTS ====================
+
+export function useParkingStateReport() {
+  return useQuery({
+    queryKey: QUERY_KEYS.adminReports,
+    queryFn: (): Promise<ParkingStateReport[]> => apiRequest('/admin/reports/parking-state'),
+    staleTime: 30 * 1000, // 30 seconds - reports need to be fresh
+    refetchInterval: 60 * 1000, // Auto-refresh every minute
   })
 }
