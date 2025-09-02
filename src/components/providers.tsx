@@ -1,7 +1,10 @@
 'use client'
-import React from 'react'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Layout from '@/components/common/Layout'
+import ToastContainer from '../components/common/ToastContainer'
+import { useWebSocket } from '@/hooks/useWebSocket'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -21,7 +24,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AppContent>{children}</AppContent>
     </QueryClientProvider>
+  )
+}
+
+// Separate component to use hooks after QueryClient is available
+function AppContent({ children }: { children: React.ReactNode }) {
+  // Initialize WebSocket connection
+  useWebSocket()
+
+  return (
+    <Layout>
+      {children}
+      <ToastContainer />
+    </Layout>
   )
 }
