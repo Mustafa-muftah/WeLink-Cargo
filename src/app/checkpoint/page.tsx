@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useCheckout, useSubscription } from '@/hooks/useApi'
+import { useCheckout } from '@/hooks/useApi'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/components/common/ProtectedRoute'
 import CheckoutPanel from '@/components/checkpoint/CheckoutPanel'
 import Loading from '@/components/common/Loading'
-import { CheckoutResponse, Subscription } from '@/types/api'
+import { CheckoutResponse } from '@/types/api'
 
 export default function CheckpointPage() {
   return (
@@ -19,49 +19,30 @@ export default function CheckpointPage() {
 function CheckpointContent() {
   const [ticketId, setTicketId] = useState('')
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResponse | null>(null)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [showConvertOption, setShowConvertOption] = useState(false)
   
   const { user } = useAuth()
   const checkoutMutation = useCheckout()
 
-  const handleTicketLookup = async (id: string, forceConvert = false) => {
+  const handleTicketLookup = async (id: string) => {
     try {
       const result = await checkoutMutation.mutateAsync({
         ticketId: id,
-        forceConvertToVisitor: forceConvert
       })
       
       setCheckoutResult(result)
       setTicketId(id)
-      
-      // If this was a subscriber ticket, we might want to fetch subscription details
-      // This would be included in the ticket response in a real implementation
-      setShowConvertOption(false)
     } catch (error: any) {
-      // Error handling is done by the mutation hook
       setCheckoutResult(null)
-      setSubscription(null)
-      setShowConvertOption(false)
-    }
-  }
-
-  const handleConvertToVisitor = async () => {
-    if (ticketId) {
-      await handleTicketLookup(ticketId, true)
     }
   }
 
   const handleNewTicket = () => {
     setTicketId('')
     setCheckoutResult(null)
-    setSubscription(null)
-    setShowConvertOption(false)
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -81,10 +62,8 @@ function CheckpointContent() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Input */}
           <div className="space-y-6">
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -120,7 +99,6 @@ function CheckpointContent() {
                   </div>
                 </div>
 
-                {/* Quick Actions */}
                 <div className="border-t pt-4">
                   <p className="text-sm text-gray-600 mb-3">Quick Actions:</p>
                   <div className="flex flex-wrap gap-2">
@@ -142,91 +120,8 @@ function CheckpointContent() {
                 </div>
               </div>
             </div>
-
-            {/* Subscription Verification (if applicable) */}
-            {subscription && (
-              <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Subscription Verification
-                </h3>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subscriber:</span>
-                    <span className="font-medium">{subscription.userName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className={`font-medium ${subscription.active ? 'text-success-600' : 'text-error-600'}`}>
-                      {subscription.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Registered Vehicles:</h4>
-                  <div className="space-y-2">
-                    {subscription.cars.map((car, index) => (
-                      <div key={index} className="bg-gray-50 rounded p-3 text-sm">
-                        <div className="font-medium">{car.plate}</div>
-                        <div className="text-gray-600">
-                          {car.color} {car.brand} {car.model}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Employee Action Required:</strong> Verify the vehicle plate matches one of the registered plates above.
-                  </p>
-                </div>
-
-                {!showConvertOption && (
-                  <div className="mt-4 flex space-x-3">
-                    <button
-                      onClick={() => setShowConvertOption(false)}
-                      className="flex-1 btn-primary"
-                    >
-                      Plate Matches - Proceed
-                    </button>
-                    <button
-                      onClick={() => setShowConvertOption(true)}
-                      className="flex-1 btn-secondary"
-                    >
-                      Plate Doesn't Match
-                    </button>
-                  </div>
-                )}
-
-                {showConvertOption && (
-                  <div className="mt-4 p-3 bg-error-50 border border-error-200 rounded">
-                    <p className="text-sm text-error-800 mb-3">
-                      Vehicle plate doesn't match subscription. Convert to visitor rates?
-                    </p>
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={handleConvertToVisitor}
-                        className="btn-primary"
-                        disabled={checkoutMutation.isPending}
-                      >
-                        Convert to Visitor
-                      </button>
-                      <button
-                        onClick={() => setShowConvertOption(false)}
-                        className="btn-secondary"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Right Column - Results */}
           <div>
             {checkoutResult ? (
               <CheckoutPanel 
