@@ -6,11 +6,11 @@ import { useZonesByGate, useGates } from '@/hooks/useApi'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useUIStore } from '@/store'
 import { Zone, WebSocketZoneUpdate } from '@/types/api'
-import GateHeader from '../../../components/gate/GateHeader'
-import ZoneCard from '../../../components/gate/ZoneCard'
-import TicketModal from '../../../components/gate/TicketModal'
-import Loading from '../../../components/common/Loading'
-import { ErrorMessage } from '../../../components/common/ErrorBoundry'
+import GateHeader from '@/components/gate/GateHeader'
+import ZoneCard from '@/components/gate/ZoneCard'
+import TicketModal from '@/components/gate/TicketModal'
+import Loading from '@/components/common/Loading'
+import { ErrorMessage } from '@/components/common/ErrorBoundry'
 
 export default function GatePage() {
   const params = useParams()
@@ -119,7 +119,7 @@ export default function GatePage() {
           ))}
         </div>
 
-        {zones.length === 0 && (
+        {zones.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -30,6 +30,12 @@ export default function UserMenu() {
 
   if (!user) return null
 
+  // Safe fallbacks for possibly missing user fields
+  const displayName = user.name || user.username || 'User'
+  const displayUsername = user.username || ''
+  const displayRole = user.role || ''
+  const avatarInitial = displayName.charAt(0).toUpperCase()
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -38,13 +44,11 @@ export default function UserMenu() {
       >
         {/* User avatar */}
         <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm font-medium">
-            {user.name.charAt(0).toUpperCase()}
-          </span>
+          <span className="text-white text-sm font-medium">{avatarInitial}</span>
         </div>
         <div className="hidden sm:block text-left">
-          <div className="text-gray-900 font-medium">{user.name}</div>
-          <div className="text-gray-500 text-xs capitalize">{user.role}</div>
+          <div className="text-gray-900 font-medium">{displayName}</div>
+          <div className="text-gray-500 text-xs capitalize">{displayRole}</div>
         </div>
         <svg
           className={`w-4 h-4 text-gray-500 transition-transform ${
@@ -67,9 +71,13 @@ export default function UserMenu() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
           <div className="px-4 py-2 border-b">
-            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-            <div className="text-sm text-gray-500">@{user.username}</div>
-            <div className="text-xs text-gray-400 capitalize">{user.role}</div>
+            <div className="text-sm font-medium text-gray-900">{displayName}</div>
+            {displayUsername && (
+              <div className="text-sm text-gray-500">@{displayUsername}</div>
+            )}
+            {displayRole && (
+              <div className="text-xs text-gray-400 capitalize">{displayRole}</div>
+            )}
           </div>
           
           <button
