@@ -7,7 +7,7 @@ import { ErrorMessage } from '@/components/common/ErrorBoundry'
 
 export default function AdminDashboard() {
   const { data: reportData, isLoading, error } = useParkingStateReport()
-  const { adminAuditLog } = useUIStore()
+  const { adminAuditLog, clearAuditLog } = useUIStore()
 
   if (isLoading) {
     return (
@@ -100,24 +100,38 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <button 
+              onClick={clearAuditLog}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear Log
+            </button>
+          </div>
           {adminAuditLog.length > 0 ? (
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {adminAuditLog.slice(0, 10).map((entry) => (
                 <div key={entry.id} className="flex items-start space-x-3 text-sm">
-                  <div className="w-2 h-2 bg-primary-600 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-medium">{entry.action}</p>
-                    <p className="text-gray-600">{entry.details}</p>
+                  <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-900 font-medium truncate">{entry.action.replace(/-/g, ' ')}</p>
+                    <p className="text-gray-600 truncate">{entry.details}</p>
                     <p className="text-gray-500 text-xs mt-1">
-                      {new Date(entry.timestamp).toLocaleString()}
+                      {new Date(entry.timestamp).toLocaleString()} • Admin: {entry.adminId}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No recent activity</p>
+            <div className="text-center py-8">
+              <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <p className="text-gray-500">No recent activity</p>
+              <p className="text-xs text-gray-400 mt-1">Admin actions will appear here</p>
+            </div>
           )}
         </div>
 

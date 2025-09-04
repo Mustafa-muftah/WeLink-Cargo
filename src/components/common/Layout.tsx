@@ -1,9 +1,9 @@
 'use client'
-import React from 'react'
+
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useAuthStore } from '../../store'
+import { useAuthStore } from '@/store'
 import ConnectionStatus from './ConnectionStatus'
 import UserMenu from './UserMenu'
 
@@ -41,6 +41,7 @@ interface HeaderProps {
 function Header({ isGatePage }: HeaderProps) {
   const pathname = usePathname()
   const { isAuthenticated, user, isAdmin } = useAuthStore()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -60,7 +61,7 @@ function Header({ isGatePage }: HeaderProps) {
             </Link>
           </div>
 
-          {/* Navigation - only show for authenticated users */}
+          {/* Desktop Navigation - only show for authenticated users */}
           {isAuthenticated && !isGatePage && (
             <nav className="hidden md:flex items-center space-x-8">
               <Link
@@ -102,13 +103,26 @@ function Header({ isGatePage }: HeaderProps) {
 
           {/* Gate-specific current time display */}
           {isGatePage && (
-            <div className="text-sm text-gray-600">
+            <div className="hidden sm:block text-sm text-gray-600">
               <CurrentTime />
             </div>
           )}
 
-          {/* User menu or login */}
           <div className="flex items-center space-x-4">
+            {/* Mobile menu button */}
+            {isAuthenticated && !isGatePage && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Toggle mobile menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
+
+            {/* User menu or login */}
             {isAuthenticated ? (
               <UserMenu />
             ) : (
@@ -118,6 +132,51 @@ function Header({ isGatePage }: HeaderProps) {
             )}
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && isAuthenticated && !isGatePage && (
+          <div className="md:hidden border-t border-gray-200 py-3">
+            <nav className="flex flex-col space-y-2">
+              <Link
+                href="/checkpoint"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  pathname === '/checkpoint' 
+                    ? 'bg-primary-100 text-primary-700' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Checkpoint
+              </Link>
+
+              {isAdmin() && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    pathname.startsWith('/admin') 
+                      ? 'bg-primary-100 text-primary-700' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  Admin
+                </Link>
+              )}
+
+              <Link
+                href="/gate/gate_1"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  pathname.startsWith('/gate') 
+                    ? 'bg-primary-100 text-primary-700' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Gates
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   )
