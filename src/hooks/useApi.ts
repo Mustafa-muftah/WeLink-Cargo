@@ -23,6 +23,8 @@ export const QUERY_KEYS = {
   categories: ['categories'],
   subscription: (id: string) => ['subscription', id],
   adminUsers: ['admin', 'users'],
+  adminCategories: ['admin', 'categories'],
+  adminZones: ['admin', 'zones'],
   adminReports: ['admin', 'reports'],
 } as const
 
@@ -175,6 +177,68 @@ export function useCreateUser() {
   })
 }
 
+// ==================== ADMIN - CATEGORIES ====================
+
+export function useAdminCategories() {
+  return useQuery({
+    queryKey: QUERY_KEYS.adminCategories,
+    queryFn: (): Promise<Category[]> => apiRequest('/admin/categories'),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Partial<Category>): Promise<Category> =>
+      apiRequest(`/admin/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      toast.success('Category updated successfully!')
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminCategories })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categories })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to update category', error.message)
+    },
+  })
+}
+
+// ==================== ADMIN - ZONES ====================
+
+export function useAdminZones() {
+  return useQuery({
+    queryKey: QUERY_KEYS.adminZones,
+    queryFn: (): Promise<Zone[]> => apiRequest('/admin/zones'),
+    staleTime: 1 * 60 * 1000,
+  })
+}
+
+export function useUpdateZoneStatus() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: ({ id, open }: { id: string; open: boolean }): Promise<Zone> =>
+      apiRequest(`/admin/zones/${id}/open`, {
+        method: 'PUT',
+        body: JSON.stringify({ open }),
+      }),
+    onSuccess: (_, variables) => {
+      toast.success(`Zone ${variables.open ? 'opened' : 'closed'} successfully!`)
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminZones })
+      queryClient.invalidateQueries({ queryKey: ['zones'] })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to update zone status', error.message)
+    },
+  })
+}
+
 // ==================== ADMIN - REPORTS ====================
 
 export function useParkingStateReport() {
@@ -183,5 +247,103 @@ export function useParkingStateReport() {
     queryFn: (): Promise<ParkingStateReport[]> => apiRequest('/admin/reports/parking-state'),
     staleTime: 30 * 1000, // 30 seconds - reports need to be fresh
     refetchInterval: 60 * 1000, // Auto-refresh every minute
+  })
+}
+
+// ==================== ADMIN - RUSH HOURS & VACATIONS ====================
+
+export function useAdminRushHours() {
+  return useQuery({
+    queryKey: ['admin', 'rushHours'],
+    queryFn: (): Promise<{ id: string; weekDay: number; from: string; to: string }[]> => 
+      apiRequest('/admin/rush-hours'),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateRushHour() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (rushHour: { weekDay: number; from: string; to: string }) => 
+      apiRequest('/admin/rush-hours', {
+        method: 'POST',
+        body: JSON.stringify(rushHour),
+      }),
+    onSuccess: () => {
+      toast.success('Rush hour added successfully!')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'rushHours'] })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to add rush hour', error.message)
+    },
+  })
+}
+
+export function useDeleteRushHour() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (id: string): Promise<void> =>
+      apiRequest(`/admin/rush-hours/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      toast.success('Rush hour deleted successfully!')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'rushHours'] })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to delete rush hour', error.message)
+    },
+  })
+}
+
+export function useAdminVacations() {
+  return useQuery({
+    queryKey: ['admin', 'vacations'],
+    queryFn: (): Promise<{ id: string; name: string; from: string; to: string }[]> => 
+      apiRequest('/admin/vacations'),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateVacation() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (vacation: { name: string; from: string; to: string }) => 
+      apiRequest('/admin/vacations', {
+        method: 'POST',
+        body: JSON.stringify(vacation),
+      }),
+    onSuccess: () => {
+      toast.success('Vacation period added successfully!')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'vacations'] })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to add vacation period', error.message)
+    },
+  })
+}
+
+export function useDeleteVacation() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (id: string): Promise<void> =>
+      apiRequest(`/admin/vacations/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      toast.success('Vacation period deleted successfully!')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'vacations'] })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to delete vacation period', error.message)
+    },
   })
 }
