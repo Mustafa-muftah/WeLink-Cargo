@@ -25,7 +25,9 @@ export const QUERY_KEYS = {
   adminUsers: ['admin', 'users'],
   adminCategories: ['admin', 'categories'],
   adminZones: ['admin', 'zones'],
-  adminReports: ['admin', 'reports'],
+  adminReports: ['admin', 'reports', 'parking-state'],
+  adminRushHours: ['admin', 'rushHours'],
+  adminVacations: ['admin', 'vacations'],
 } as const
 
 // ==================== AUTHENTICATION ====================
@@ -153,7 +155,8 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: QUERY_KEYS.adminUsers,
     queryFn: (): Promise<User[]> => apiRequest('/admin/users'),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
+    retry: false, // Don't retry on 404
   })
 }
 
@@ -172,7 +175,7 @@ export function useCreateUser() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminUsers })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to create user', error.message)
+      toast.error('Failed to create user', error.message || 'User creation endpoint not implemented')
     },
   })
 }
@@ -182,7 +185,7 @@ export function useCreateUser() {
 export function useAdminCategories() {
   return useQuery({
     queryKey: QUERY_KEYS.adminCategories,
-    queryFn: (): Promise<Category[]> => apiRequest('/admin/categories'),
+    queryFn: (): Promise<Category[]> => apiRequest('/master/categories'),
     staleTime: 5 * 60 * 1000,
   })
 }
@@ -213,7 +216,7 @@ export function useUpdateCategory() {
 export function useAdminZones() {
   return useQuery({
     queryKey: QUERY_KEYS.adminZones,
-    queryFn: (): Promise<Zone[]> => apiRequest('/admin/zones'),
+    queryFn: (): Promise<Zone[]> => apiRequest('/master/zones'),
     staleTime: 1 * 60 * 1000,
   })
 }
@@ -252,15 +255,6 @@ export function useParkingStateReport() {
 
 // ==================== ADMIN - RUSH HOURS & VACATIONS ====================
 
-export function useAdminRushHours() {
-  return useQuery({
-    queryKey: ['admin', 'rushHours'],
-    queryFn: (): Promise<{ id: string; weekDay: number; from: string; to: string }[]> => 
-      apiRequest('/admin/rush-hours'),
-    staleTime: 5 * 60 * 1000,
-  })
-}
-
 export function useCreateRushHour() {
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -273,39 +267,11 @@ export function useCreateRushHour() {
       }),
     onSuccess: () => {
       toast.success('Rush hour added successfully!')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'rushHours'] })
+      // No list query to invalidate (endpoint not available)
     },
     onError: (error: ApiError) => {
       toast.error('Failed to add rush hour', error.message)
     },
-  })
-}
-
-export function useDeleteRushHour() {
-  const queryClient = useQueryClient()
-  const toast = useToast()
-
-  return useMutation({
-    mutationFn: (id: string): Promise<void> =>
-      apiRequest(`/admin/rush-hours/${id}`, {
-        method: 'DELETE',
-      }),
-    onSuccess: () => {
-      toast.success('Rush hour deleted successfully!')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'rushHours'] })
-    },
-    onError: (error: ApiError) => {
-      toast.error('Failed to delete rush hour', error.message)
-    },
-  })
-}
-
-export function useAdminVacations() {
-  return useQuery({
-    queryKey: ['admin', 'vacations'],
-    queryFn: (): Promise<{ id: string; name: string; from: string; to: string }[]> => 
-      apiRequest('/admin/vacations'),
-    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -321,7 +287,7 @@ export function useCreateVacation() {
       }),
     onSuccess: () => {
       toast.success('Vacation period added successfully!')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'vacations'] })
+      // No list query to invalidate (endpoint not available)
     },
     onError: (error: ApiError) => {
       toast.error('Failed to add vacation period', error.message)
@@ -329,21 +295,5 @@ export function useCreateVacation() {
   })
 }
 
-export function useDeleteVacation() {
-  const queryClient = useQueryClient()
-  const toast = useToast()
-
-  return useMutation({
-    mutationFn: (id: string): Promise<void> =>
-      apiRequest(`/admin/vacations/${id}`, {
-        method: 'DELETE',
-      }),
-    onSuccess: () => {
-      toast.success('Vacation period deleted successfully!')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'vacations'] })
-    },
-    onError: (error: ApiError) => {
-      toast.error('Failed to delete vacation period', error.message)
-    },
-  })
-}
+// Note: GET and DELETE endpoints for rush hours and vacations are not supported by the backend.
+// If added to backend later, implement corresponding useAdminRushHours and useAdminVacations hooks.
