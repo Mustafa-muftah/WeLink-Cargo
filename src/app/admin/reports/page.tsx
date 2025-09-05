@@ -144,7 +144,7 @@ export default function AdminReportsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                          {zone.categoryId.replace('cat_', '').charAt(0).toUpperCase() + zone.categoryId.replace('cat_', '').slice(1)}
+                          {zone.categoryId ? zone.categoryId.replace('cat_', '').charAt(0).toUpperCase() + zone.categoryId.replace('cat_', '').slice(1) : 'Unknown'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
