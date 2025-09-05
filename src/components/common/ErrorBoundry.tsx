@@ -1,6 +1,6 @@
 'use client'
 
-import React,{ Component, ReactNode } from 'react'
+import { Component, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -46,18 +46,26 @@ export default class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 mb-4">
               We apologize for the inconvenience. Please try refreshing the page or contact support if the problem persists.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn-primary"
-            >
-              Refresh Page
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-primary"
+              >
+                Refresh Page
+              </button>
+              <button
+                onClick={() => this.setState({ hasError: false })}
+                className="btn-secondary"
+              >
+                Try Again
+              </button>
+            </div>
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-sm text-gray-500">
+              <details className="mt-6 text-left">
+                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Error Details (Development)
                 </summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-40 text-left">
                   {this.state.error.stack}
                 </pre>
               </details>
@@ -71,37 +79,88 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Simpler error display component for inline errors
+// Enhanced error display component for inline errors
 export function ErrorMessage({ 
   title = 'Error', 
   message, 
   retry,
-  className = ''
+  className = '',
+  variant = 'default'
 }: {
   title?: string
   message: string
   retry?: () => void
   className?: string
+  variant?: 'default' | 'compact'
 }) {
+  if (variant === 'compact') {
+    return (
+      <div className={`flex items-center space-x-2 text-sm text-error-600 ${className}`}>
+        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{message}</span>
+        {retry && (
+          <button
+            onClick={retry}
+            className="underline hover:no-underline"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className={`bg-error-50 border border-error-200 rounded-lg p-4 ${className}`}>
       <div className="flex items-start">
-        <svg className="w-5 h-5 text-error-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div className="flex-1">
+        <div className="flex-shrink-0">
+          <svg className="w-5 h-5 text-error-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div className="ml-3 flex-1">
           <h3 className="text-sm font-medium text-error-800">{title}</h3>
           <p className="mt-1 text-sm text-error-700">{message}</p>
           {retry && (
-            <button
-              onClick={retry}
-              className="mt-2 text-sm text-error-600 hover:text-error-800 underline"
-            >
-              Try again
-            </button>
+            <div className="mt-3">
+              <button
+                onClick={retry}
+                className="text-sm bg-error-100 hover:bg-error-200 text-error-800 px-3 py-1 rounded-md transition-colors"
+              >
+                Try again
+              </button>
+            </div>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Network error component
+export function NetworkError({ retry }: { retry?: () => void }) {
+  return (
+    <ErrorMessage
+      title="Connection Error"
+      message="Unable to connect to the server. Please check your internet connection and try again."
+      retry={retry}
+    />
+  )
+}
+
+// Not found error component
+export function NotFoundError({ title = "Not Found", message = "The requested resource could not be found." }: { title?: string; message?: string }) {
+  return (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-500">{message}</p>
     </div>
   )
 }
