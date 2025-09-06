@@ -61,8 +61,8 @@ function Header({ isGatePage }: HeaderProps) {
             </Link>
           </div>
 
-          {/* Desktop Navigation - only show for authenticated users */}
-          {isAuthenticated && !isGatePage && (
+          {/* Desktop Navigation - always show for authenticated users */}
+          {isAuthenticated && (
             <nav className="hidden md:flex items-center space-x-8">
               <Link
                 href="/checkpoint"
@@ -101,16 +101,9 @@ function Header({ isGatePage }: HeaderProps) {
             </nav>
           )}
 
-          {/* Gate-specific current time display */}
-          {isGatePage && (
-            <div className="hidden sm:block text-sm text-gray-600">
-              <CurrentTime />
-            </div>
-          )}
-
           <div className="flex items-center space-x-4">
             {/* Mobile menu button */}
-            {isAuthenticated && !isGatePage && (
+            {isAuthenticated && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
@@ -134,7 +127,7 @@ function Header({ isGatePage }: HeaderProps) {
         </div>
 
         {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && isAuthenticated && !isGatePage && (
+        {mobileMenuOpen && isAuthenticated && (
           <div className="md:hidden border-t border-gray-200 py-3">
             <nav className="flex flex-col space-y-2">
               <Link
@@ -182,25 +175,3 @@ function Header({ isGatePage }: HeaderProps) {
   )
 }
 
-function CurrentTime() {
-  const [currentTime, setCurrentTime] = useState(new Date())
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
-
-  return (
-    <span>
-      {currentTime.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      })}
-    </span>
-  )
-}
