@@ -1,7 +1,7 @@
 // API Configuration and utilities for TanStack Query
-import { STORAGE_KEYS } from '../utlis/constants'
+import { STORAGE_KEYS, API_CONFIG } from '../utlis/constants'
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
+const API_BASE_URL = API_CONFIG.BASE_URL
 
 export class ApiError extends Error {
   constructor(

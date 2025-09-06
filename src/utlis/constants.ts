@@ -1,8 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
-    BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000/api/v1',
-    WS_URL: process.env.WS_URL || 'ws://localhost:3000/api/v1/ws',
-    TIMEOUT: 10000, // 10 seconds
+    BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1',
+    WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000/api/v1/ws',
+    TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000'),
   } as const
   
   // Local Storage Keys

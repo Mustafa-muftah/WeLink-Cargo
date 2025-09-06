@@ -1,13 +1,35 @@
 'use client'
 
-import { useParkingStateReport } from '@/hooks/useApi'
+import { useEffect } from 'react'
+import { useParkingStateReport, useGates } from '@/hooks/useApi'
+import { useWebSocket } from '@/hooks/useWebSocket'
 import { useUIStore } from '@/store'
 import Loading from '@/components/common/Loading'
 import { ErrorMessage } from '@/components/common/ErrorBoundry'
 
 export default function AdminDashboard() {
   const { data: reportData, isLoading, error } = useParkingStateReport()
+  const { data: gatesData } = useGates()
   const { adminAuditLog, clearAuditLog } = useUIStore()
+  
+  // Initialize WebSocket connection for admin updates
+  const { subscribeToGate } = useWebSocket({
+    onAdminUpdate: (update) => {
+      // Additional handling if needed, but the hook already adds to audit log
+      console.log('Admin update received:', update)
+    }
+  })
+
+  // Subscribe to all gates to receive admin updates
+  useEffect(() => {
+    if (gatesData && gatesData.length > 0) {
+      // Subscribe to all gates to ensure we receive admin updates
+      gatesData.forEach(gate => {
+        subscribeToGate(gate.id)
+      })
+      console.log(`Admin dashboard subscribed to ${gatesData.length} gates for admin updates`)
+    }
+  }, [gatesData, subscribeToGate])
 
   if (isLoading) {
     return (
@@ -115,7 +137,9 @@ export default function AdminDashboard() {
                 <div key={entry.id} className="flex items-start space-x-3 text-sm">
                   <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-900 font-medium truncate">{entry.action.replace(/-/g, ' ')}</p>
+                    <p className="text-gray-900 font-medium truncate">
+                      {entry.action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())}
+                    </p>
                     <p className="text-gray-600 truncate">{entry.details}</p>
                     <p className="text-gray-500 text-xs mt-1">
                       {new Date(entry.timestamp).toLocaleString()} • Admin: {entry.adminId}
@@ -170,3 +194,5 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+  

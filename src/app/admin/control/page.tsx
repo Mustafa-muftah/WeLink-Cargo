@@ -9,6 +9,8 @@ import {
   useCreateRushHour,
   useCreateVacation
 } from '@/hooks/useApi'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import { useUIStore } from '@/store'
 import { ButtonSpinner } from '@/components/common/Loading'
 import { ErrorMessage } from '@/components/common/ErrorBoundry'
 import Loading from '@/components/common/Loading'
@@ -20,7 +22,7 @@ const weekDays = [
   { value: 4, label: 'Thursday' },
   { value: 5, label: 'Friday' },
   { value: 6, label: 'Saturday' },
-  { value: 7, label: 'Sunday' },
+  { value: 0, label: 'Sunday' },
 ]
 
 function RushHourManagement() {
@@ -271,34 +273,19 @@ function CategoryRates() {
 
 export default function AdminControlPage() {
   const [processingZones, setProcessingZones] = useState<Set<string>>(new Set())
-  const [auditLog, setAuditLog] = useState<{ timestamp: string; action: string; adminId: string }[]>([])
-  const [ws, setWs] = useState<WebSocket | null>(null)
+  const { adminAuditLog } = useUIStore()
 
   const { data: zones, isLoading, error } = useAdminZones()
   const updateZoneStatusMutation = useUpdateZoneStatus()
 
-  // WebSocket for admin-updates
-  useEffect(() => {
-    const socket = new WebSocket('/api/v1/ws') // Adjust to your base URL, e.g., ws://localhost:3000/api/v1/ws
-    socket.onopen = () => {
-      console.log('WS connected for admin')
+  // Use the WebSocket hook to connect and receive admin updates
+  useWebSocket({
+    onAdminUpdate: (update) => {
+      // The useWebSocket hook already adds to the UIStore audit log
+      // We can add additional handling here if needed
+      console.log('Admin update received in control panel:', update)
     }
-    socket.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data)
-        if (msg.type === 'admin-update') {
-          const { timestamp, action, adminId } = msg.payload
-          setAuditLog(prev => [...prev.slice(-20), { timestamp, action, adminId }]) // Keep last 20 for short log
-        }
-      } catch (err) {
-        console.error('WS message error', err)
-      }
-    }
-    socket.onclose = () => console.log('WS disconnected')
-    setWs(socket)
-
-    return () => socket.close()
-  }, [])
+  })
 
   const handleToggleZone = async (zoneId: string, currentStatus: boolean) => {
     setProcessingZones(prev => new Set(Array.from(prev).concat(zoneId)))
@@ -347,12 +334,15 @@ export default function AdminControlPage() {
                 <div className="flex justify-between">
                   <div>
                     <h3 className="font-medium">{zone.name}</h3>
-                    <p className="text-sm text-gray-500">{zone.categoryId}</p>
+                    <p className="text-sm text-gray-500">Category: {zone.categoryId}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {zone.occupied}/{zone.totalSlots} occupied
+                    </p>
                   </div>
                   <button
                     onClick={() => handleToggleZone(zone.id, zone.open)}
                     disabled={processingZones.has(zone.id)}
-                    className={`px-3 py-1 text-xs rounded ${zone.open ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}
+                    className={`px-3 py-1 text-xs rounded ${zone.open ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'} disabled:opacity-50`}
                   >
                     {processingZones.has(zone.id) ? <ButtonSpinner /> : zone.open ? 'Close' : 'Open'}
                   </button>
@@ -377,20 +367,50 @@ export default function AdminControlPage() {
 
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Live Audit Log</h2>
-          {auditLog.length === 0 ? <p>No updates.</p> : (
-            <ul className="space-y-2">
-              {auditLog.map((entry, i) => (
-                <li key={i}>{entry.timestamp} - Admin {entry.adminId}: {entry.action}</li>
+          {adminAuditLog.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No admin updates yet.</p>
+              <p className="text-sm mt-2">Actions performed by admins will appear here in real-time.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {adminAuditLog.slice(0, 20).map((entry) => (
+                <div key={entry.id} className="flex items-start space-x-3 text-sm border-b pb-2">
+                  <div className="flex-1">
+                    <span className="text-gray-600">{new Date(entry.timestamp).toLocaleString()}</span>
+                    <span className="mx-2 text-gray-400">•</span>
+                    <span className="font-medium text-gray-900">
+                      Admin {entry.adminId}
+                    </span>
+                    <span className="mx-2 text-gray-400">:</span>
+                    <span className="text-gray-700">
+                      {entry.action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())}
+                    </span>
+                    {entry.details && (
+                      <span className="text-gray-500 ml-2">({entry.details})</span>
+                    )}
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Emergency Actions</h2>
           <div className="flex space-x-4">
-            <button onClick={() => handleEmergency(false)} className="px-4 py-2 bg-red-600 text-white rounded">Close All</button>
-            <button onClick={() => handleEmergency(true)} className="px-4 py-2 bg-green-600 text-white rounded">Open All</button>
+            <button 
+              onClick={() => handleEmergency(false)} 
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Close All Zones
+            </button>
+            <button 
+              onClick={() => handleEmergency(true)} 
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Open All Zones
+            </button>
           </div>
         </div>
       </div>

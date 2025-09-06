@@ -20,21 +20,35 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // Connection state changes
     wsService.setOnConnectionStateChange((state: WebSocketConnectionState) => {
       setWsConnectionState(state)
+      console.log('WebSocket connection state changed:', state)
     })
 
     // Zone updates
     wsService.setOnZoneUpdate((update: WebSocketZoneUpdate) => {
+      console.log('Zone update received:', update)
       options.onZoneUpdate?.(update)
     })
 
     // Admin updates
     wsService.setOnAdminUpdate((update: WebSocketAdminUpdate) => {
-      // Add to audit log
+      console.log('Admin update received:', update)
+      
+      // Add to audit log with better formatting
+      const actionText = update.payload.action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
+      const detailsText = `${update.payload.targetType}: ${update.payload.targetId}`
+      
       addAuditLogEntry({
         timestamp: update.payload.timestamp,
         adminId: update.payload.adminId,
         action: update.payload.action,
-        details: `${update.payload.targetType}: ${update.payload.targetId}`,
+        details: detailsText,
+      })
+      
+      console.log('Added audit log entry:', {
+        action: actionText,
+        details: detailsText,
+        adminId: update.payload.adminId,
+        timestamp: update.payload.timestamp
       })
       
       options.onAdminUpdate?.(update)
@@ -57,18 +71,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, [options, setWsConnectionState, addAuditLogEntry])
 
   const subscribeToGate = useCallback((gateId: string) => {
+    console.log('Subscribing to gate:', gateId)
     wsService.subscribeToGate(gateId)
   }, [])
 
   const unsubscribeFromGate = useCallback((gateId: string) => {
+    console.log('Unsubscribing from gate:', gateId)
     wsService.unsubscribeFromGate(gateId)
   }, [])
 
   const disconnect = useCallback(() => {
+    console.log('Disconnecting WebSocket')
     wsService.disconnect()
   }, [])
 
   const connect = useCallback(() => {
+    console.log('Connecting WebSocket')
     wsService.connect()
   }, [])
 
@@ -81,3 +99,4 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     connect,
   }
 }
+

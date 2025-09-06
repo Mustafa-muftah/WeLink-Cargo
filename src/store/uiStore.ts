@@ -43,6 +43,9 @@ interface UIState {
     action: string
     details: string
   }>
+  
+  // Deduplication tracking for admin updates
+  processedAdminUpdates: Set<string>
 }
 
 interface UIActions {
@@ -82,6 +85,7 @@ const initialState: UIState = {
   selectedGateTab: 'visitor',
   selectedZoneId: null,
   adminAuditLog: [],
+  processedAdminUpdates: new Set(),
 }
 
 export const useUIStore = create<UIStore>((set, get) => ({
@@ -148,17 +152,52 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setSelectedZone: (selectedZoneId: string | null) =>
     set({ selectedZoneId }),
 
-  // Admin audit log actions
+  // Admin audit log actions with deduplication
   addAuditLogEntry: (entry: Omit<UIState['adminAuditLog'][0], 'id'>) => {
+    const state = get()
+    
+    // Create a unique key for this admin update based on timestamp, adminId, action, and details
+    const updateKey = `${entry.timestamp}-${entry.adminId}-${entry.action}-${entry.details}`
+    
+    // Check if we've already processed this update
+    if (state.processedAdminUpdates.has(updateKey)) {
+      console.log('Duplicate admin update detected, skipping:', updateKey)
+      return
+    }
+    
     const id = Math.random().toString(36).substr(2, 9)
     const newEntry = { id, ...entry }
     
+    // Add the update key to processed set and the entry to the log
+    const newProcessedUpdates = new Set(state.processedAdminUpdates)
+    newProcessedUpdates.add(updateKey)
+    
+    // Keep only the last 100 processed updates to prevent memory leaks
+    if (newProcessedUpdates.size > 100) {
+      const updatesArray = Array.from(newProcessedUpdates)
+      const recentUpdates = updatesArray.slice(-50) // Keep last 50
+      newProcessedUpdates.clear()
+      recentUpdates.forEach(key => newProcessedUpdates.add(key))
+    }
+    
     set(state => ({
-      adminAuditLog: [newEntry, ...state.adminAuditLog].slice(0, 50) // Keep last 50 entries
+      adminAuditLog: [newEntry, ...state.adminAuditLog].slice(0, 50), // Keep last 50 entries
+      processedAdminUpdates: newProcessedUpdates
     }))
+    
+    console.log('Added unique audit log entry:', {
+      updateKey,
+      action: entry.action,
+      details: entry.details,
+      adminId: entry.adminId,
+      timestamp: entry.timestamp
+    })
   },
 
-  clearAuditLog: () => set({ adminAuditLog: [] }),
+  clearAuditLog: () => set({ 
+    adminAuditLog: [],
+    processedAdminUpdates: new Set() // Clear processed updates when clearing log
+  }),
 }))
 
 // Convenience hooks for common toast types
@@ -179,3 +218,4 @@ export const useToast = () => {
       addToast({ type: 'info', title, message }),
   }
 }
+
